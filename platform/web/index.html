@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MaleCNS Experiment Platform</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <strong>MaleCNS v1.0</strong>
+      <span class="sub">Synchronized Task × Brain Activity Platform</span>
+    </div>
+    <div class="status">
+      <span id="streamDot" class="dot"></span>
+      <span id="streamStatus">connecting</span>
+      <span class="divider">|</span>
+      <span id="clock">t = 0 ms</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="task-panel">
+      <div class="panel-title">
+        <span>EXPERIMENT</span>
+        <span id="trialBadge">trial —</span>
+      </div>
+
+      <div id="taskStage" class="task-stage">
+        <div id="fixation" class="fixation hidden">+</div>
+        <div id="cue" class="cue hidden"></div>
+        <div id="stimulus" class="stimulus hidden"></div>
+        <div id="message" class="message">Waiting for experiment stream…</div>
+      </div>
+
+      <div class="task-meta">
+        <div><span>phase</span><b id="phase">idle</b></div>
+        <div><span>condition</span><b id="condition">—</b></div>
+        <div><span>stimulus</span><b id="stimulusName">—</b></div>
+        <div><span>event time</span><b id="eventTime">0 ms</b></div>
+      </div>
+    </section>
+
+    <section class="brain-panel">
+      <div class="panel-title">
+        <span>BRAIN ACTIVITY</span>
+        <span>Viewer V5</span>
+      </div>
+      <iframe id="viewerFrame" title="MaleCNS Viewer V5"></iframe>
+    </section>
+  </main>
+
+  <footer>
+    <div class="timeline">
+      <div id="timelineFill"></div>
+    </div>
+    <div class="footnote">
+      Shared session timebase: task events and activity frames use the same <code>t_ms</code>.
+      Viewer activity is routed through <code>activity/live.jsonl</code>.
+    </div>
+  </footer>
+
+  <script src="/assets/app.js"></script>
+
+<script id="v5-progress-cleanup">
+(function(){
+  const selectors=[
+    '#progress','#progressBar','#progress-bar',
+    '.progress','.progress-bar','.progress-track','.progress-fill',
+    '.task-progress','.task-progress-bar','.task-progress-track',
+    '.timeline-progress','.timeline-bar','.timeline-track',
+    '.event-progress','.phase-progress',
+    '[class*="progress"]','[id*="progress"]'
+  ];
+
+  function clean(){
+    for(const sel of selectors){
+      document.querySelectorAll(sel).forEach(el=>{
+        el.style.setProperty('display','none','important');
+        el.style.setProperty('visibility','hidden','important');
+      });
+    }
+  }
+
+  clean();
+  new MutationObserver(clean).observe(document.body,{
+    childList:true,
+    subtree:true,
+    attributes:true,
+    attributeFilter:['style','class']
+  });
+})();
+</script>
+
+
+<!-- V5_BOTTOM_BLUE_BAR_REMOVAL_START -->
+<style id="v5-remove-bottom-blue-bar-style">
+/* Known semantic progress elements */
+progress,
+[role="progressbar"],
+meter {
+  display:none !important;
+  visibility:hidden !important;
+}
+</style>
+
+<script id="v5-remove-bottom-blue-bar-script">
+(function(){
+  function isBlueCyan(rgb){
+    const m = String(rgb || '').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if(!m) return false;
+    const r=+m[1], g=+m[2], b=+m[3];
+
+    // cyan / blue family used by the platform progress line
+    return (
+      (b > r + 25 && g > r + 10) ||
+      (g > r + 35 && b > r + 35)
+    ) && Math.max(g,b) > 90;
+  }
+
+  function isBottomWideThinBar(el){
+    if(!(el instanceof HTMLElement)) return false;
+
+    const rect=el.getBoundingClientRect();
+    if(rect.width < window.innerWidth * 0.35) return false;
+    if(rect.height <= 0 || rect.height > 14) return false;
+    if(rect.bottom < window.innerHeight * 0.70) return false;
+
+    const cs=getComputedStyle(el);
+    const bg=cs.backgroundColor;
+    const borderTop=cs.borderTopColor;
+    const borderBottom=cs.borderBottomColor;
+
+    return isBlueCyan(bg) || isBlueCyan(borderTop) || isBlueCyan(borderBottom);
+  }
+
+  function removeBottomBlueBar(){
+    document.querySelectorAll('progress,[role="progressbar"],meter').forEach(el=>{
+      el.style.setProperty('display','none','important');
+      el.style.setProperty('visibility','hidden','important');
+    });
+
+    document.querySelectorAll('body *').forEach(el=>{
+      if(isBottomWideThinBar(el)){
+        el.style.setProperty('display','none','important');
+        el.style.setProperty('visibility','hidden','important');
+        el.dataset.v5BottomBarRemoved='1';
+      }
+    });
+
+    // Extra targeted cleanup around the known footer sentence.
+    const all=[...document.querySelectorAll('body *')];
+    const textEl=all.find(el =>
+      el.children.length===0 &&
+      /Shared session timebase/i.test(el.textContent || '')
+    );
+
+    if(textEl){
+      let box=textEl.parentElement;
+      for(let depth=0; box && depth<4; depth++, box=box.parentElement){
+        [...box.children].forEach(child=>{
+          if(child !== textEl && isBottomWideThinBar(child)){
+            child.style.setProperty('display','none','important');
+            child.style.setProperty('visibility','hidden','important');
+          }
+          child.querySelectorAll?.('*').forEach(desc=>{
+            if(isBottomWideThinBar(desc)){
+              desc.style.setProperty('display','none','important');
+              desc.style.setProperty('visibility','hidden','important');
+            }
+          });
+        });
+      }
+    }
+  }
+
+  removeBottomBlueBar();
+
+  const observer=new MutationObserver(removeBottomBlueBar);
+  observer.observe(document.documentElement,{
+    subtree:true,
+    childList:true,
+    attributes:true,
+    attributeFilter:['style','class','value']
+  });
+
+  window.addEventListener('resize',removeBottomBlueBar);
+  setInterval(removeBottomBlueBar,500);
+})();
+</script>
+<!-- V5_BOTTOM_BLUE_BAR_REMOVAL_END -->
+
+
+<!-- in-platform run control -->
+<style id="runExperimentBtnStyle">
+#runExperimentControl{
+  position:fixed;
+  top:7px;
+  left:320px;
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  height:27px;
+  padding:0;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+#runExperimentBtn{
+  appearance:none;
+  height:26px;
+  min-width:72px;
+  padding:0 13px;
+  border:1px solid rgba(88,125,153,.52);
+  border-radius:6px;
+  background:linear-gradient(180deg,rgba(29,48,64,.96) 0%,rgba(19,34,47,.96) 100%);
+  color:rgba(220,236,247,.94);
+  font:600 12px/24px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  letter-spacing:.02em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 1px 3px rgba(0,0,0,.26);
+  cursor:pointer;
+  transition:background .14s ease,border-color .14s ease,color .14s ease,box-shadow .14s ease,transform .08s ease;
+}
+#runExperimentBtn:hover{
+  background:linear-gradient(180deg,rgba(34,65,88,.98) 0%,rgba(23,47,66,.98) 100%);
+  border-color:rgba(80,150,196,.78);
+  color:#f1f8fc;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(55,117,158,.12),0 2px 6px rgba(0,0,0,.28);
+}
+#runExperimentBtn:active{transform:translateY(1px);}
+#runExperimentBtn:disabled{opacity:.62;cursor:default;transform:none;}
+#runExperimentStatus{
+  position:relative;
+  padding-left:10px;
+  color:rgba(142,167,185,.76);
+  font:500 10px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  white-space:nowrap;
+}
+#runExperimentStatus::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:50%;
+  width:5px;
+  height:5px;
+  margin-top:-2.5px;
+  border-radius:50%;
+  background:#4db38a;
+  box-shadow:0 0 5px rgba(77,179,138,.55);
+}
+
+#closePlatformBtn{
+  appearance:none;
+  height:26px;
+  min-width:54px;
+  padding:0 12px;
+  border:1px solid rgba(143,89,89,.46);
+  border-radius:6px;
+  background:linear-gradient(180deg,rgba(58,39,42,.92) 0%,rgba(42,29,32,.94) 100%);
+  color:rgba(224,205,207,.88);
+  font:600 12px/24px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  letter-spacing:.02em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 1px 3px rgba(0,0,0,.22);
+  cursor:pointer;
+  transition:background .14s ease,border-color .14s ease,color .14s ease,box-shadow .14s ease,transform .08s ease;
+}
+#closePlatformBtn:hover{
+  background:linear-gradient(180deg,rgba(76,46,51,.96) 0%,rgba(54,33,37,.96) 100%);
+  border-color:rgba(181,101,108,.65);
+  color:#f2e5e6;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 6px rgba(0,0,0,.24);
+}
+#closePlatformBtn:active{transform:translateY(1px);}
+#closePlatformBtn:disabled{opacity:.60;cursor:default;transform:none;}
+</style>
+
+<div id="runExperimentControl">
+  <button id="runExperimentBtn" type="button">运行试验</button>
+  <button id="closePlatformBtn" type="button" title="关闭平台并退出所有相关后台进程">关闭</button>
+  <span id="runExperimentStatus">就绪</span>
+</div>
+
+<script id="runExperimentBtnScript">
+(()=>{
+  const btn=document.getElementById('runExperimentBtn');
+  const st=document.getElementById('runExperimentStatus');
+  if(!btn || !st) return;
+
+  btn.addEventListener('click', async ()=>{
+    btn.disabled=true;
+    st.textContent='启动中…';
+
+    try{
+      const r=await fetch('/api/run-demo',{
+        method:'POST',
+        cache:'no-store',
+        headers:{'Accept':'application/json'}
+      });
+      const data=await r.json();
+
+      if(!r.ok || !data.ok){
+        throw new Error(data.error || ('HTTP '+r.status));
+      }
+
+      st.textContent=data.already_running ? '运行中' : '已启动';
+      setTimeout(()=>{ st.textContent='运行中'; },600);
+    }catch(e){
+      console.error(e);
+      st.textContent='启动失败';
+      btn.disabled=false;
+      return;
+    }
+
+    setTimeout(()=>{
+      btn.disabled=false;
+      st.textContent='可再次运行';
+    },32000);
+  });
+})();
+</script>
+<!-- end run control -->
+
+<script id="runExperimentPlacementScript">
+(()=>{
+  const control=document.getElementById('runExperimentControl');
+  if(!control) return;
+
+  const subtitleText='Synchronized Task × Brain Activity Platform';
+
+  function findBestSubtitle(){
+    const all=[...document.querySelectorAll('body *')];
+    const hits=all.filter(el=>{
+      const t=(el.textContent||'').trim();
+      if(!t.includes(subtitleText)) return false;
+      const r=el.getBoundingClientRect();
+      return r.width>40 && r.width<700 && r.height<80;
+    });
+
+    if(!hits.length) return null;
+
+    hits.sort((a,b)=>{
+      const ar=a.getBoundingClientRect();
+      const br=b.getBoundingClientRect();
+      return (ar.width*ar.height)-(br.width*br.height);
+    });
+    return hits[0];
+  }
+
+  function placeRunControl(){
+    const sub=findBestSubtitle();
+    if(sub){
+      const r=sub.getBoundingClientRect();
+      const x=Math.round(r.right+16);
+      const y=Math.round(r.top + (r.height-control.offsetHeight)/2);
+      control.style.left=x+'px';
+      control.style.top=Math.max(5,y)+'px';
+    }else{
+      control.style.left='320px';
+      control.style.top='7px';
+    }
+  }
+
+  requestAnimationFrame(()=>{
+    placeRunControl();
+    setTimeout(placeRunControl,120);
+    setTimeout(placeRunControl,600);
+  });
+
+  window.addEventListener('resize',placeRunControl,{passive:true});
+})();
+</script>
+<script id="closePlatformBtnScript">
+(()=>{
+  const btn=document.getElementById('closePlatformBtn');
+  const runBtn=document.getElementById('runExperimentBtn');
+  const st=document.getElementById('runExperimentStatus');
+  if(!btn) return;
+
+  btn.addEventListener('click', async ()=>{
+    const ok=window.confirm('关闭 MaleCNS 试验平台？\n\n将同时退出：\n• 当前试验 / demo\n• Activity Bridge\n• Viewer 9205\n• Experiment Platform 9215');
+    if(!ok) return;
+
+    btn.disabled=true;
+    if(runBtn) runBtn.disabled=true;
+    if(st) st.textContent='正在关闭…';
+
+    try{
+      const r=await fetch('/api/shutdown',{
+        method:'POST',
+        cache:'no-store',
+        headers:{'Accept':'application/json'}
+      });
+      const data=await r.json();
+
+      if(!r.ok || !data.ok){
+        throw new Error(data.error || ('HTTP '+r.status));
+      }
+
+      if(st) st.textContent='已关闭';
+
+      setTimeout(()=>{
+        document.body.innerHTML=`
+          <div style="
+            min-height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#070c11;
+            color:#9fb1bf;
+            font:500 14px/1.6 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+          ">
+            MaleCNS 试验平台已关闭，相关后台进程正在退出。
+          </div>`;
+      },350);
+    }catch(e){
+      console.error(e);
+      if(st) st.textContent='关闭失败';
+      btn.disabled=false;
+      if(runBtn) runBtn.disabled=false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
+

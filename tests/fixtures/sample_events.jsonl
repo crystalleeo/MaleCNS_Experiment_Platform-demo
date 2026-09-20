@@ -1,0 +1,4 @@
+{"schema":"malecns.experiment.v1","type":"activity","t_ms":100.0,"trial":1,"condition":"fixture","phase":"cue","body_ids":[1,2,3,4],"values":[0.31,0.42,0.53,0.64]}
+{"schema":"malecns.experiment.v1","type":"task","t_ms":250.0,"trial":1,"condition":"fixture","phase":"stimulus_a","payload":{"kind":"visual_A","size_px":130}}
+{"body_ids":[4,3],"values":[0.9,0.1]}
+{"phase":"response","t_ms":300.0,"trial":1,"payload":{}}

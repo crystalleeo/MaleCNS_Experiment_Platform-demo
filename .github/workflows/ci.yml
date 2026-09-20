@@ -1,0 +1,60 @@
+name: release-smoke
+
+# Runs entirely offline apart from installing the small Python dependency set.
+# It never fetches complete MaleCNS data, never downloads A3/A4/A5, never starts
+# a viewer/platform server, and never touches the source project.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Environment report
+        run: python3 scripts/check_environment.py --ci
+
+      - name: Shell syntax checks
+        run: |
+          for script in bootstrap.sh start.sh stop.sh scripts/run_demo.sh; do
+            echo "bash -n $script"
+            bash -n "$script"
+          done
+
+      - name: Python byte-compile
+        run: python3 -m compileall -q assets scripts config lib bridge demo viewer platform tests
+
+      - name: Parse asset manifest JSON
+        run: |
+          python3 -c "import json;m=json.load(open('assets/manifest.json'));a=m['assets'];assert [x['id'] for x in a]==['A%d'%i for i in range(1,10)],a;assert all(len(x['sha256'])==64 for x in a);print('manifest ok:',len(a),'assets')"
+          python3 -c "import json;d=json.load(open('tests/fixtures/r1_frozen_expectations.json'));assert len(d['assets'])==9;print('frozen R1 expectations ok')"
+
+      - name: Install minimal demo dependencies
+        run: python3 -m pip install --disable-pip-version-check -r requirements.txt
+
+      - name: Unresolved derived-asset gate must be deterministic
+        run: |
+          set +e
+          python3 assets/download_assets.py --check-only > /tmp/download.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/download.log
+          test "$rc" -eq 3
+          grep -q "ASSET_URL_UNRESOLVED" /tmp/download.log
+          grep -q "R7" /tmp/download.log
+          echo "deterministic ASSET_URL_UNRESOLVED gate confirmed (exit $rc)"
+
+      - name: Offline smoke tests
+        run: python3 -m unittest discover -s tests -t . -v

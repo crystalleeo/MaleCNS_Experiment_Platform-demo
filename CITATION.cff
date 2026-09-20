@@ -1,0 +1,41 @@
+cff-version: 1.2.0
+message: >-
+  This repository packages a demo viewer and experiment platform built on
+  MaleCNS v1.0 data (CC BY 4.0). Project-owned code is MIT-licensed; see
+  LICENSE, DATA_LICENSE.md, and THIRD_PARTY_NOTICES.md for scope and
+  attribution. Please cite both the MaleCNS dataset/paper and this software
+  release.
+title: "MaleCNS Experiment Platform demo"
+version: 0.1.0
+abstract: >-
+  Local demo release: a Three.js viewer (port 9205) plus an experiment platform
+  (port 9215) showing a synchronized, non-scientific activity stream routed
+  through a canonical-universe-validating activity bridge. MaleCNS-derived
+  visual assets are redistributed under CC BY 4.0 with attribution. This demo
+  does not include or claim MaleCNS dynamics.
+type: software
+authors:
+  - name: "MaleCNS Experiment Platform demo contributors"
+keywords:
+  - MaleCNS
+  - Drosophila melanogaster
+  - connectome
+  - neuroscience
+  - visualization
+  - demo
+references:
+  - type: article
+    title: >-
+      Sexual dimorphism in the complete Drosophila male central nervous system
+      connectome
+    authors:
+      - family-names: Berg
+        given-names: "S."
+    journal: Cell
+    volume: 189
+    issue: 18
+    start: 5504
+    end: 5526.e15
+    year: 2026
+    doi: 10.1016/j.cell.2026.08.015
+    notes: "Primary MaleCNS publication; MaleCNS v1.0 data is CC BY 4.0."

@@ -1,0 +1,18 @@
+# release runtime state (PIDs, logs, activity streams)
+.runtime/
+
+# repo-local virtualenv
+.venv/
+
+# downloaded project-derived viewer assets (A3/A4/A5) — never commit, never LFS
+viewer/web/assets/neurons_lines.bin
+viewer/web/assets/brain_shell.bin
+viewer/web/assets/vnc_shell.bin
+*.part
+
+# python / editor / OS noise
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.DS_Store

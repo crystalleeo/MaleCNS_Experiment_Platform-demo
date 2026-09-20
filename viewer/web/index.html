@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MaleCNS Viewer V5 Hybrid</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#020407;color:#e8eef6;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#app{position:fixed;inset:0}
+#hud{position:fixed;left:18px;top:16px;z-index:5;background:rgba(2,6,10,.66);backdrop-filter:blur(9px);border:1px solid rgba(180,210,235,.16);border-radius:12px;padding:12px 14px;min-width:260px;box-shadow:0 10px 34px rgba(0,0,0,.28)}
+#title{font-weight:650;letter-spacing:.06em;font-size:14px}
+#sub{opacity:.65;font-size:11px;margin-top:4px}
+.row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px}
+.row label{width:92px;opacity:.78}
+input[type=range]{width:132px}
+button{border:1px solid rgba(190,220,245,.18);background:rgba(255,255,255,.055);color:#e8eef6;border-radius:8px;padding:5px 9px;cursor:pointer}
+#status{position:fixed;right:16px;bottom:14px;z-index:5;font-size:11px;opacity:.72;background:rgba(0,0,0,.42);padding:7px 10px;border-radius:8px}
+.badge{display:inline-block;margin-left:8px;font-size:10px;padding:2px 6px;border:1px solid rgba(120,230,190,.3);border-radius:999px;color:#89efc2}
+</style>
+<script type="importmap">
+{"imports":{"three":"./vendor/three.module.js"}}
+</script>
+
+<style id="v5-hud-toggle-style">
+#hud{
+  position:fixed;
+  transition:opacity .18s ease, transform .18s ease;
+}
+#hud.v5-hidden{
+  opacity:0;
+  transform:translateX(-22px);
+  pointer-events:none;
+}
+#hudHideBtn{
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:25px;
+  height:25px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  border-radius:7px;
+  border:1px solid rgba(190,220,245,.18);
+  background:rgba(255,255,255,.05);
+  color:#dbe7f2;
+  font-size:16px;
+  line-height:1;
+  cursor:pointer;
+  opacity:.78;
+}
+#hudHideBtn:hover{
+  opacity:1;
+  background:rgba(255,255,255,.11);
+}
+#hudShowBtn{
+  position:fixed;
+  left:12px;
+  top:12px;
+  z-index:30;
+  width:34px;
+  height:34px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  border-radius:9px;
+  border:1px solid rgba(190,220,245,.20);
+  background:rgba(2,6,10,.72);
+  backdrop-filter:blur(8px);
+  color:#e8eef6;
+  font-size:17px;
+  cursor:pointer;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+}
+#hudShowBtn:hover{
+  background:rgba(20,28,38,.90);
+}
+</style>
+
+</head>
+<body>
+<div id="app"></div>
+<div id="hud">
+  <div id="title">MaleCNS Viewer V5 Hybrid <span class="badge">prototype</span></div>
+  <div id="sub">official shells · local skeletons · realtime activity</div>
+  <div class="row"><label>Shell opacity</label><input id="shellOpacity" type="range" min="0" max=".30" step=".01" value=".08"><span id="so">.08</span></div>
+  <div class="row"><label>Neuron gain</label><input id="gain" type="range" min=".4" max="2.5" step=".05" value="1.25"><span id="gv">1.25</span></div>
+  <div class="row"><label>Activity</label><button id="demoBtn">Demo ON</button><button id="resetBtn">Reset view</button></div>
+</div>
+<div id="status">loading…</div>
+<script>
+(function(){
+  const el = document.getElementById('status');
+
+  function show(msg, bad){
+    el.textContent = msg;
+    el.style.color = bad ? '#ff8f8f' : '#cbd7e4';
+    el.style.maxWidth = '75vw';
+    el.style.whiteSpace = 'normal';
+    console.log('[V5]', msg);
+  }
+
+  show('bootstrap · HTML ready');
+
+  window.addEventListener('error', function(e){
+    show('WINDOW ERROR · ' + (e.message || e.error || 'unknown'), true);
+  });
+
+  window.addEventListener('unhandledrejection', function(e){
+    const r = e.reason;
+    show('PROMISE ERROR · ' + ((r && r.message) ? r.message : String(r)), true);
+  });
+
+  const src = './main.js?v=' + Date.now();
+  show('bootstrap · importing main.js');
+
+  import(src).then(function(){
+    console.log('[V5] main.js import resolved');
+  }).catch(function(err){
+    console.error(err);
+    show('IMPORT ERROR · ' + (err && err.message ? err.message : String(err)), true);
+  });
+})();
+</script>
+
+<button id="hudShowBtn" title="显示控制面板" aria-label="显示控制面板">☰</button>
+
+
+<script id="v5-hud-toggle-script">
+(function(){
+  const hud = document.getElementById('hud');
+  const showBtn = document.getElementById('hudShowBtn');
+  if(!hud || !showBtn) return;
+
+  const hideBtn = document.createElement('button');
+  hideBtn.id = 'hudHideBtn';
+  hideBtn.title = '隐藏控制面板';
+  hideBtn.setAttribute('aria-label','隐藏控制面板');
+  hideBtn.textContent = '×';
+  hud.appendChild(hideBtn);
+
+  function hideHud(){
+    hud.classList.add('v5-hidden');
+    showBtn.style.display = 'flex';
+    try { localStorage.setItem('malecns-v5-hud-hidden','1'); } catch(e){}
+  }
+
+  function showHud(){
+    hud.classList.remove('v5-hidden');
+    showBtn.style.display = 'none';
+    try { localStorage.setItem('malecns-v5-hud-hidden','0'); } catch(e){}
+  }
+
+  hideBtn.addEventListener('click', hideHud);
+  showBtn.addEventListener('click', showHud);
+
+  try{
+    if(localStorage.getItem('malecns-v5-hud-hidden') === '1'){
+      hideHud();
+    }
+  }catch(e){}
+})();
+</script>
+
+</body>
+</html>
