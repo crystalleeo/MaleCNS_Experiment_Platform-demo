@@ -50,9 +50,8 @@ set -e
 if [[ "$ASSET_RC" -ne 0 ]]; then
   say ""
   if [[ "$ASSET_RC" -eq 3 ]]; then
-    say "R3 BLOCKED: a required project-derived release asset has no stable URL yet."
-    say "  The asset manifest records url_status=\"pending_project_release\" (A3/A4/A5)."
-    say "  R7 will attach the stable release URL; bootstrap then completes unchanged."
+    say "A required project-derived release asset has no verified public URL."
+    say "  Update from the current release repository; do not guess a URL or use a local source-project fallback."
   fi
   die "cannot resolve required assets (exit $ASSET_RC); nothing was started"
 fi

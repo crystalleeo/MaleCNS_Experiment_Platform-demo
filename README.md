@@ -12,21 +12,19 @@ that validates every `bodyId` against the frozen MaleCNS v1.0 canonical universe
 This demo shows **synchronization plumbing**, not neuroscience: the producer that
 feeds the bridge is explicitly a non-scientific demo stream.
 
-## Status: R3 BLOCKED on project release asset URLs
+## Status: R3A asset URLs verified; R3 re-acceptance pending
 
 Three required viewer assets (`neurons_lines.bin`, `brain_shell.bin`,
 `vnc_shell.bin`; manifest ids **A3/A4/A5**) are project-derived release assets.
-Their bytes and SHA256 hashes are frozen by the R1 audit, but **no stable project
-release URL exists yet**, because creating one requires the authorized GitHub
-release. They are therefore recorded honestly in `assets/manifest.json` as
-`"url_status": "pending_project_release"`.
+Their bytes and SHA256 hashes are frozen by the R1 audit and were independently
+re-verified after anonymous download from the public immutable GitHub Release
+[`assets-v0.1.0`](https://github.com/crystalleeo/MaleCNS_Experiment_Platform-demo/releases/tag/assets-v0.1.0).
+They are recorded in `assets/manifest.json` as
+`"url_status": "verified_project_release"`.
 
-Consequence: **an external user cannot complete `./bootstrap.sh` until those URLs
-are attached.** Bootstrap stops with an actionable `ASSET_URL_UNRESOLVED` message
-naming the asset, and it never guesses a URL, copies from a local source project,
-or creates a symlink fallback. Attaching the stable URLs (keep the frozen SHA256
-values) completes bootstrap with no other change. This limitation is deliberately
-visible rather than concealed.
+`./bootstrap.sh` downloads each missing asset only from its recorded public URL,
+verifies its exact size and SHA256, and never guesses a URL, copies from a local
+source project, or creates a symlink fallback.
 
 ## Deployment contract
 
@@ -93,9 +91,9 @@ folder, or the source project.
 |---|---|---|---|
 | A1 | `data/canonical_body_ids.txt` | committed, small derived | CC BY 4.0 |
 | A2 | `viewer/web/assets/neurons.json` | committed, small derived | CC BY 4.0 |
-| A3 | `viewer/web/assets/neurons_lines.bin` | **download** (`pending_project_release`) | CC BY 4.0 |
-| A4 | `viewer/web/assets/brain_shell.bin` | **download** (`pending_project_release`) | CC BY 4.0 |
-| A5 | `viewer/web/assets/vnc_shell.bin` | **download** (`pending_project_release`) | CC BY 4.0 |
+| A3 | `viewer/web/assets/neurons_lines.bin` | **download** (`verified_project_release`) | CC BY 4.0 |
+| A4 | `viewer/web/assets/brain_shell.bin` | **download** (`verified_project_release`) | CC BY 4.0 |
+| A5 | `viewer/web/assets/vnc_shell.bin` | **download** (`verified_project_release`) | CC BY 4.0 |
 | A6 | `viewer/web/assets/shell_meta.json` | committed, small derived | CC BY 4.0 |
 | A7 | `viewer/web/vendor/three.module.js` | committed vendored (Three.js r180) | MIT |
 | A8 | `viewer/web/vendor/three.core.js` | committed vendored (Three.js r180) | MIT |
@@ -156,13 +154,14 @@ taken from the read-only R0/R1 audit reports in the source project:
 - `audit/github_release/R1_ASSET_PROVENANCE.json`
 
 The R1 decision is binding: commit A1/A2/A6 and A7–A9; treat A3/A4/A5 as release
-assets whose hashes are frozen but whose stable URLs must be attached by R7.
+assets whose hashes are frozen and whose stable URLs are bound to the immutable
+`assets-v0.1.0` Release in `assets/manifest.json`.
 
 ## Troubleshooting
 
 | Symptom | Meaning / action |
 |---|---|
-| `ASSET_URL_UNRESOLVED: asset A3 …` | Expected until R7 attaches the stable project release URLs for A3/A4/A5. Do not guess a URL or copy from a source project. |
+| `ASSET_URL_UNRESOLVED: asset A3 …` | The checked-out manifest lacks a verified project Release URL. Use the current repository version; do not guess a URL or copy from a source project. |
 | `missing …/.venv/bin/python3` | Run `./bootstrap.sh` first. |
 | `port 9205/9215 is held by another process` | Stop the foreign process yourself; this repo never kills processes it did not start. |
 | `healthcheck exit=6` | A Python dependency is missing: re-run `./bootstrap.sh`. |
