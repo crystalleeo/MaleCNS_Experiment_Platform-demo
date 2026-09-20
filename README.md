@@ -1,5 +1,11 @@
 # MaleCNS Experiment Platform demo
 
+<p align="center">
+  <img src="docs/assets/Male_CNS.gif"
+       alt="MaleCNS Experiment Platform demo"
+       width="100%">
+</p>
+
 A self-contained local demo release of the accepted **V5 synchronized Experiment
 Platform**: a Three.js viewer, an experiment platform UI, and an activity bridge
 that validates every `bodyId` against the frozen MaleCNS v1.0 canonical universe.
